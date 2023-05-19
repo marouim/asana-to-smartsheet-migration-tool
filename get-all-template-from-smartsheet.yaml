@@ -1,0 +1,19 @@
+---
+- name: "Get all templates from SmartSheet"
+  gather_facts: no
+  hosts: localhost
+  tasks:
+
+  - name: "Get list of templates"
+    ansible.builtin.uri:
+      url: "{{ smartsheet_url }}/templates"
+      headers:
+        Content-Type: application/json
+        Authorization: "Bearer {{ smartsheet_token }}"
+      method: "GET"
+
+    register: templates
+  
+  - name: "Display list of templates"
+    debug:
+      var: templates

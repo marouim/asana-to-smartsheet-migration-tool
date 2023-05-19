@@ -1,0 +1,112 @@
+
+- name: "Get all tasks of a project"
+  ansible.builtin.uri:
+    url: "{{ asana_url }}/tasks?project={{ project.gid }}"
+    headers:
+      Authorization: "Bearer {{ asana_token }}"
+    method: "GET"
+  register: tasks
+
+- debug:
+    var: tasks
+
+- name: "set empty array for attachments"
+  set_fact:
+    attachment_list: []
+
+- name: "set empty array for tasks"
+  set_fact:
+    task_list: []
+
+- name: "for each task, search for attachements"
+  include_tasks: list-asana-attachments.yaml
+  loop: "{{ tasks.json.data }}"
+
+- debug:
+    var: attachment_list
+
+- name: "for each task, get stories"
+  include_tasks: list-asana-task-comments.yaml
+  loop: "{{ tasks.json.data }}"
+
+
+- debug:
+    var: task_list
+
+
+## Smartsheet
+
+- name: "create sheet from template"
+  ansible.builtin.uri:
+    url: "{{ smartsheet_url }}/workspaces/{{ dest_workspace_id }}/sheets"
+    headers:
+      Content-Type: application/json
+      Authorization: "Bearer {{ smartsheet_token }}"
+    method: "POST"
+    body_format: json
+    body:
+      name: "{{ project.name[:50] }}"
+      fromId: "{{ dest_template_id }}"
+  register: new_sheet
+
+- debug:
+    var: new_sheet
+
+- name: "Get columns from new sheet"
+  ansible.builtin.uri:
+    url: "{{ smartsheet_url }}/sheets/{{ new_sheet.json.result.id }}/columns"
+    headers:
+      Content-Type: application/json
+      Authorization: "Bearer {{ smartsheet_token }}"
+    method: "GET"
+  register: new_sheet_columns
+
+- debug:
+    var: new_sheet_columns
+
+- name: "Create rows from Asana tasks"
+  ansible.builtin.uri:
+    url: "{{ smartsheet_url }}/sheets/{{ new_sheet.json.result.id }}/rows"
+    headers:
+      Content-Type: application/json
+      Authorization: "Bearer {{ smartsheet_token }}"
+    method: "POST"
+    body_format: json
+    body:
+      cells:
+      - columnId: "{{ new_sheet_columns.json.data[0].id }}"
+        value: "{{ item.name }}"
+      - columnId: "{{ new_sheet_columns.json.data[1].id }}"
+        value: "{{ item.created }}"
+      - columnId: "{{ new_sheet_columns.json.data[2].id }}"
+        value: "{{ item.due_date }}"
+      - columnId: "{{ new_sheet_columns.json.data[3].id }}"
+        value: "{{ contact_list | selectattr('name', '==', item.assigned_to) | map(attribute='email') | join() }}"
+      - columnId: "{{ new_sheet_columns.json.data[4].id }}"
+        value: "{{ item.completed | ternary('Complete', 'In Progress') }}"
+      - columnId: "{{ new_sheet_columns.json.data[5].id }}"
+        value: "{{ item.comments | join('\n') }}"
+
+  with_items: "{{ task_list }}"
+
+
+- name: "Create rows for attachements"
+  ansible.builtin.uri:
+    url: "{{ smartsheet_url }}/sheets/{{ new_sheet.json.result.id }}/rows"
+    headers:
+      Content-Type: application/json
+      Authorization: "Bearer {{ smartsheet_token }}"
+    method: "POST"
+    body_format: json
+    body:
+      cells:
+      - columnId: "{{ new_sheet_columns.json.data[0].id }}"
+        value: "{{ item.name }}"
+
+      - columnId: "{{ new_sheet_columns.json.data[4].id }}"
+        value: "To Do"
+        
+      - columnId: "{{ new_sheet_columns.json.data[5].id }}"
+        value: "{{ item.view_url }}"
+
+  with_items: "{{ attachment_list }}"

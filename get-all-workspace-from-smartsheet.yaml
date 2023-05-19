@@ -1,0 +1,19 @@
+---
+- name: "Get all workspace from SmartSheet"
+  gather_facts: no
+  hosts: localhost
+  tasks:
+
+  - name: "Get list of workspaces"
+    ansible.builtin.uri:
+      url: "{{ smartsheet_url }}/workspaces/"
+      headers:
+        Content-Type: application/json
+        Authorization: "Bearer {{ smartsheet_token }}"
+      method: "GET"
+
+    register: workspaces
+  
+  - name: "Display list of workspaces"
+    debug:
+      var: workspaces

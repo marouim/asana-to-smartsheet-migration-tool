@@ -1,0 +1,18 @@
+---
+- name: "Get all portfolio from Asana"
+  gather_facts: no
+  hosts: localhost
+  tasks: 
+
+  - name: "Get all portfolios"
+    ansible.builtin.uri:
+      url: "{{ asana_url }}/portfolios?workspace={{ workspace_id }}&owner={{ owner_id }}"
+      headers:
+        Authorization: "Bearer {{ asana_token }}"
+      method: "GET"
+    register: portfolios
+  
+  - name: "Display list of portfolios"
+    debug:
+      var: portfolios
+

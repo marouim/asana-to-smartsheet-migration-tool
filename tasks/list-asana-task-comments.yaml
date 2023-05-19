@@ -1,0 +1,41 @@
+- name: "Get task detail"
+  ansible.builtin.uri:
+    url: "{{ asana_url }}/tasks/{{ item.gid }}"
+    headers:
+      Authorization: "Bearer {{ asana_token }}"
+    method: "GET"
+  register: task_detail
+
+- debug:
+    var: task_detail
+
+- name: "Get task stories"
+  ansible.builtin.uri:
+    url: "{{ asana_url }}/tasks/{{ item.gid }}/stories"
+    headers:
+      Authorization: "Bearer {{ asana_token }}"
+    method: "GET"
+  register: stories
+
+- when: task_detail.json.data.assignee
+  set_fact:
+    assigned_to: "{{ task_detail.json.data.assignee.name }}"
+
+- when: not task_detail.json.data.assignee
+  set_fact:
+    assigned_to: "{{ default_task_owner }}"
+
+- set_fact:
+    task_clean:
+      name: "{{ task_detail.json.data.name }}"
+      assigned_to: "{{ assigned_to }}"
+      created: "{{ task_detail.json.data.created_at[:10] }}"
+      due_date: "{{ task_detail.json.data.due_on }}"
+      comments: "{{ stories.json.data | selectattr('type', '==', 'comment') | map(attribute='text') | list }}"
+      completed: "{{ task_detail.json.data.completed }}"
+
+- debug:
+    var: task_clean
+
+- set_fact:
+    task_list: "{{ task_list + [ task_clean ] }}"

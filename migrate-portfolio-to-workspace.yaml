@@ -1,0 +1,25 @@
+---
+- name: "Migrate all projects from Portfolio to Workspace"
+  gather_facts: no
+  hosts: localhost
+  tasks: 
+
+  - name: "Get all projects from a portfolio"
+    ansible.builtin.uri:
+      url: "{{ asana_url }}/portfolios/{{ portfolio_id }}/items"
+      headers:
+        Authorization: "Bearer {{ asana_token }}"
+      method: "GET"
+    register: projects 
+
+  - set_fact:
+      project_list: "{{ projects.json.data | selectattr('resource_type', '==', 'project') | list }}"
+
+  - debug:
+      var: project_list
+
+  - name: "Migrate project to smartsheet"
+    include_tasks: tasks/migrate-project-to-smartsheet.yaml
+    with_items: "{{ project_list }}"
+    loop_control:
+      loop_var: project

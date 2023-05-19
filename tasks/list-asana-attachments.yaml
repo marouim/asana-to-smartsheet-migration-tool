@@ -1,0 +1,23 @@
+- name: "Search for attachements"
+  ansible.builtin.uri:
+    url: "{{ asana_url }}/attachments?parent={{ item.gid }}"
+    headers:
+      Authorization: "Bearer {{ asana_token }}"
+    method: "GET"
+  register: attachements
+
+- name: "Get attachment detail"
+  ansible.builtin.uri:
+    url: "{{ asana_url }}/attachments/{{ item.gid }}"
+    headers:
+      Authorization: "Bearer {{ asana_token }}"
+    method: "GET"
+  loop: "{{ attachements.json.data }}"
+  register: attachement_details
+ 
+- name: "Add attachements details to outer list"
+  set_fact:
+    attachment_list: "{{ attachment_list + [ attachement.json.data ] }}"
+  loop: "{{ attachement_details.results }}"
+  loop_control:
+    loop_var: attachement

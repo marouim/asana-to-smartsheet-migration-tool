@@ -1,0 +1,33 @@
+# == MIGRATION IDs =============
+
+# Get from get-all-portfolio-from-asana.yaml
+portfolio_id: "<SOURCE PORTFOLIO ID>"
+
+# Get from get-all-workspace-from-smartsheet.yaml
+dest_workspace_id: "<DESTINATION WORKSPACE ID>"
+
+# ==============================
+
+asana_url: "https://app.asana.com/api/1.0"
+asana_token: "<ASANA PERSONAL API TOKEN>"
+
+# To get owner and workspace
+# https://app.asana.com/api/1.0/users/me
+owner_id: "<YOUR ASANA ID>"
+workspace_id: "<YOUR ASANA WORKSPACE ID>"
+
+smartsheet_url: "https://api.smartsheet.com/2.0"
+smartsheet_token: "<SMARTSHEET API TOKEN>"
+
+# Get from get-all-template-from-smartsheet.yaml
+dest_template_id: "<YOUR SMARTSHEET TEMPLATE ID>"
+
+default_task_owner: "<YOUR NAME IN SMARTSHEET>"
+
+# MAP TO ASSIGN TASKS (ASSIGNED_TO)
+# List of contacts you are working with. 
+# You need the FULL list of people assigned to your Asana tasks. 
+# Asana returns names and Smartsheet expect an email address. 
+contact_list:
+- name: "<NAME DISPLAYED IN ASANA>"
+  email: "<EMAIL OF THE CONTACT>"
